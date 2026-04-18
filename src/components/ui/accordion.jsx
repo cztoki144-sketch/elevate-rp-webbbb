@@ -1,0 +1,5 @@
+import React from 'react'
+export function Accordion({ className = '', ...props }) { return <div className={`rounded-2xl border border-white/10 bg-white/5 ${className}`} {...props} /> }
+export function AccordionItem({ value, className = '', ...props }) { return <details className={`group border-b last:border-b-0 border-white/10 ${className}`} {...props} /> }
+export function AccordionTrigger({ className = '', children, ...props }) { return (<summary className={`cursor-pointer list-none px-5 py-4 font-medium flex items-center justify-between ${className}`} {...props}>{children}<span className="ml-4 transition group-open:rotate-180">⌄</span></summary>) }
+export function AccordionContent({ className = '', ...props }) { return <div className={`px-5 pb-5 text-white/80 ${className}`} {...props} /> }
