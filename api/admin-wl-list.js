@@ -12,18 +12,32 @@ function parseLeadershipRoles() {
     .filter(Boolean)
 }
 
-async function getDiscordUser(accessToken) {
-  const res = await fetch("https://discord.com/api/users/@me", {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  })
+function getDiscordUserIdFromSupabaseUser(user) {
+  if (!user) return null
 
-  if (!res.ok) {
-    throw new Error("Nepodařilo se načíst Discord usera.")
+  const meta = user.user_metadata || {}
+  const identities = user.identities || []
+
+  const discordIdentity = identities.find((i) => i.provider === "discord")
+
+  return (
+    meta.provider_id ||
+    meta.sub ||
+    discordIdentity?.id ||
+    discordIdentity?.identity_data?.provider_id ||
+    discordIdentity?.identity_data?.sub ||
+    null
+  )
+}
+
+async function getSupabaseUserFromAccessToken(accessToken) {
+  const { data, error } = await supabase.auth.getUser(accessToken)
+
+  if (error || !data?.user) {
+    throw new Error("Nepodařilo se ověřit přihlášeného uživatele.")
   }
 
-  return await res.json()
+  return data.user
 }
 
 async function getGuildMember(discordUserId) {
@@ -40,7 +54,8 @@ async function getGuildMember(discordUserId) {
   )
 
   if (!res.ok) {
-    throw new Error("Nepodařilo se načíst Discord membera.")
+    const text = await res.text()
+    throw new Error(`Nepodařilo se načíst Discord membera. ${res.status} ${text}`)
   }
 
   return await res.json()
@@ -65,8 +80,14 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Chybí access token." })
     }
 
-    const discordUser = await getDiscordUser(accessToken)
-    const member = await getGuildMember(discordUser.id)
+    const user = await getSupabaseUserFromAccessToken(accessToken)
+    const discordUserId = getDiscordUserIdFromSupabaseUser(user)
+
+    if (!discordUserId) {
+      return res.status(400).json({ error: "Nepodařilo se získat Discord ID uživatele." })
+    }
+
+    const member = await getGuildMember(discordUserId)
 
     if (!hasLeadershipRole(member)) {
       return res.status(403).json({ error: "Nemáš oprávnění." })
