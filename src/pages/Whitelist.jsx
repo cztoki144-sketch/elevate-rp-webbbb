@@ -2,6 +2,22 @@ import { useEffect, useState } from "react"
 import { Navigate, useNavigate } from "react-router-dom"
 import { supabase } from "../lib/supabase"
 
+const inputClass =
+  "w-full rounded-xl bg-zinc-950/70 border border-white/20 px-4 py-4 text-white placeholder-white/40 outline-none focus:border-red-500 transition"
+
+const textareaClass = `${inputClass} min-h-[120px] resize-y`
+
+function Field({ label, required = true, children }) {
+  return (
+    <div className="space-y-3">
+      <label className="block text-lg font-bold leading-snug">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      {children}
+    </div>
+  )
+}
+
 export default function Whitelist() {
   const navigate = useNavigate()
 
@@ -59,22 +75,12 @@ export default function Whitelist() {
     loadAccess()
   }, [])
 
-const handleChange = (e) => {
-  const { name, value } = e.target
-
-  setForm((prev) => ({
-    ...prev,
-    [name]: value,
-  }))
-
-  // 🔥 FIX: drží scroll na aktuálním inputu
-  setTimeout(() => {
-    e.target.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    })
-  }, 0)
-}
+  const handleChange = (e) => {
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }))
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -167,20 +173,6 @@ const handleChange = (e) => {
     }, 1200)
   }
 
-  const inputClass =
-    "w-full rounded-xl bg-zinc-950/70 border border-white/20 px-4 py-4 text-white placeholder-white/40 outline-none focus:border-red-500 transition"
-
-  const textareaClass = `${inputClass} min-h-[120px] resize-y`
-
-  const Field = ({ label, required = true, children }) => (
-    <div className="space-y-3">
-      <label className="block text-lg font-bold leading-snug">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      {children}
-    </div>
-  )
-
   if (checking) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
@@ -195,47 +187,21 @@ const handleChange = (e) => {
 
   if (wlStatus === "pending") {
     return (
-      <div className="min-h-screen bg-slate-950 text-white px-4 py-12">
-        <div className="mx-auto max-w-3xl">
-          <div className="rounded-2xl border border-white/10 bg-slate-900 overflow-hidden">
-            <div className="px-5 py-4 border-b border-white/10">
-              <h1 className="text-2xl font-bold">Žádost už byla odeslána</h1>
-            </div>
-            <div className="p-5 space-y-4 text-white/80">
-              <p>Tvoje WL žádost už čeká na schválení.</p>
-              <button
-                onClick={() => navigate("/profile")}
-                className="rounded-xl bg-red-600 hover:bg-red-500 px-4 py-2 font-semibold"
-              >
-                Přejít na profil
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <StatusCard
+        title="Žádost už byla odeslána"
+        text="Tvoje WL žádost už čeká na schválení."
+        onClick={() => navigate("/profile")}
+      />
     )
   }
 
   if (wlStatus === "approved") {
     return (
-      <div className="min-h-screen bg-slate-950 text-white px-4 py-12">
-        <div className="mx-auto max-w-3xl">
-          <div className="rounded-2xl border border-white/10 bg-slate-900 overflow-hidden">
-            <div className="px-5 py-4 border-b border-white/10">
-              <h1 className="text-2xl font-bold">Whitelist už máš schválený</h1>
-            </div>
-            <div className="p-5 space-y-4 text-white/80">
-              <p>Novou WL žádost už vyplňovat nemusíš.</p>
-              <button
-                onClick={() => navigate("/profile")}
-                className="rounded-xl bg-red-600 hover:bg-red-500 px-4 py-2 font-semibold"
-              >
-                Přejít na profil
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <StatusCard
+        title="Whitelist už máš schválený"
+        text="Novou WL žádost už vyplňovat nemusíš."
+        onClick={() => navigate("/profile")}
+      />
     )
   }
 
@@ -253,130 +219,51 @@ const handleChange = (e) => {
 
           <form onSubmit={handleSubmit} className="space-y-8">
             <Field label="Odkaz na Steam Profil">
-              <input
-                className={inputClass}
-                type="text"
-                name="steam_url"
-                value={form.steam_url}
-                onChange={handleChange}
-                required
-              />
+              <input className={inputClass} type="text" name="steam_url" value={form.steam_url} onChange={handleChange} required />
             </Field>
 
             <Field label="Kolik je ti let?">
-              <input
-                className={inputClass}
-                type="text"
-                name="age"
-                value={form.age}
-                onChange={handleChange}
-                required
-              />
+              <input className={inputClass} type="text" name="age" value={form.age} onChange={handleChange} required />
             </Field>
 
             <Field label="Kolik máš naRPeno hodin (kde jsi už RPil)?">
-              <input
-                className={inputClass}
-                type="text"
-                name="rp_hours"
-                value={form.rp_hours}
-                onChange={handleChange}
-                required
-              />
+              <input className={inputClass} type="text" name="rp_hours" value={form.rp_hours} onChange={handleChange} required />
             </Field>
 
             <Field label="Jak by jsi vysvětlil svými slovy RP?">
-              <textarea
-                className={textareaClass}
-                name="answer_rp"
-                value={form.answer_rp}
-                onChange={handleChange}
-                required
-              />
+              <textarea className={textareaClass} name="answer_rp" value={form.answer_rp} onChange={handleChange} required />
             </Field>
 
             <Field label="Co je OOC a IC?">
-              <textarea
-                className={textareaClass}
-                name="answer_ooc_ic"
-                value={form.answer_ooc_ic}
-                onChange={handleChange}
-                required
-              />
+              <textarea className={textareaClass} name="answer_ooc_ic" value={form.answer_ooc_ic} onChange={handleChange} required />
             </Field>
 
             <Field label="Vysvětli /me a /do">
-              <input
-                className={inputClass}
-                type="text"
-                name="answer_me_do"
-                value={form.answer_me_do}
-                onChange={handleChange}
-                required
-              />
+              <input className={inputClass} type="text" name="answer_me_do" value={form.answer_me_do} onChange={handleChange} required />
             </Field>
 
             <Field label="Pravidlo CK">
-              <input
-                className={inputClass}
-                type="text"
-                name="answer_ck"
-                value={form.answer_ck}
-                onChange={handleChange}
-                required
-              />
+              <input className={inputClass} type="text" name="answer_ck" value={form.answer_ck} onChange={handleChange} required />
             </Field>
 
             <Field label="Co je to KOS?">
-              <input
-                className={inputClass}
-                type="text"
-                name="answer_kos"
-                value={form.answer_kos}
-                onChange={handleChange}
-                required
-              />
+              <input className={inputClass} type="text" name="answer_kos" value={form.answer_kos} onChange={handleChange} required />
             </Field>
 
             <Field label="O co všechno tě může zloděj okrást?">
-              <input
-                className={inputClass}
-                type="text"
-                name="answer_loot"
-                value={form.answer_loot}
-                onChange={handleChange}
-                required
-              />
+              <input className={inputClass} type="text" name="answer_loot" value={form.answer_loot} onChange={handleChange} required />
             </Field>
 
             <Field label="Vytvořím si postavu jménem Pepa Novák. Po spawnu na letišti ukradnu auto a začnou mě nahánět policisté. Já jim uteču a odpojím. Byla nějaká pravidla porušena? Jaká? Zdůvodni:">
-              <textarea
-                className={`${textareaClass} min-h-[140px]`}
-                name="scenario_1"
-                value={form.scenario_1}
-                onChange={handleChange}
-                required
-              />
+              <textarea className={`${textareaClass} min-h-[140px]`} name="scenario_1" value={form.scenario_1} onChange={handleChange} required />
             </Field>
 
             <Field label="Vykradli jste s kamarádem banku, nasedli jste do sporťáku a teď ujíždíte policii. Po cestě nabouráte do stromu, sjedete ze srázu a vyrazíte do hor. Byla nějaká pravidla porušena? Jaká? Vysvětli:">
-              <textarea
-                className={`${textareaClass} min-h-[140px]`}
-                name="scenario_2"
-                value={form.scenario_2}
-                onChange={handleChange}
-                required
-              />
+              <textarea className={`${textareaClass} min-h-[140px]`} name="scenario_2" value={form.scenario_2} onChange={handleChange} required />
             </Field>
 
             <Field label="Jak ses o serveru dozvěděl?">
-              <select
-                className={inputClass}
-                name="source_found"
-                value={form.source_found}
-                onChange={handleChange}
-                required
-              >
+              <select className={inputClass} name="source_found" value={form.source_found} onChange={handleChange} required>
                 <option value="">Vyber možnost...</option>
                 <option value="TikTok">TikTok</option>
                 <option value="Discord">Discord</option>
@@ -400,6 +287,29 @@ const handleChange = (e) => {
               </div>
             )}
           </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function StatusCard({ title, text, onClick }) {
+  return (
+    <div className="min-h-screen bg-slate-950 text-white px-4 py-12">
+      <div className="mx-auto max-w-3xl">
+        <div className="rounded-2xl border border-white/10 bg-slate-900 overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/10">
+            <h1 className="text-2xl font-bold">{title}</h1>
+          </div>
+          <div className="p-5 space-y-4 text-white/80">
+            <p>{text}</p>
+            <button
+              onClick={onClick}
+              className="rounded-xl bg-red-600 hover:bg-red-500 px-4 py-2 font-semibold"
+            >
+              Přejít na profil
+            </button>
+          </div>
         </div>
       </div>
     </div>
