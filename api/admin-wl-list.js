@@ -13,19 +13,16 @@ function parseLeadershipRoles() {
 }
 
 function getDiscordUserIdFromSupabaseUser(user) {
-  if (!user) return null
-
-  const meta = user.user_metadata || {}
-  const identities = user.identities || []
-
+  const identities = user?.identities || []
   const discordIdentity = identities.find((i) => i.provider === "discord")
+  const meta = user?.user_metadata || {}
 
   return (
-    meta.provider_id ||
-    meta.sub ||
-    discordIdentity?.id ||
     discordIdentity?.identity_data?.provider_id ||
     discordIdentity?.identity_data?.sub ||
+    discordIdentity?.id ||
+    meta.provider_id ||
+    meta.sub ||
     null
   )
 }
@@ -41,21 +38,18 @@ async function getSupabaseUserFromAccessToken(accessToken) {
 }
 
 async function getGuildMember(discordUserId) {
-  const guildId = process.env.DISCORD_GUILD_ID
-  const botToken = process.env.DISCORD_BOT_TOKEN
-
   const res = await fetch(
-    `https://discord.com/api/guilds/${guildId}/members/${discordUserId}`,
+    `https://discord.com/api/v10/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}`,
     {
       headers: {
-        Authorization: `Bot ${botToken}`,
+        Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`,
       },
     }
   )
 
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`Nepodařilo se načíst Discord membera. ${res.status} ${text}`)
+    throw new Error(`Discord member error ${res.status}: ${text}`)
   }
 
   return await res.json()
@@ -63,7 +57,8 @@ async function getGuildMember(discordUserId) {
 
 function hasLeadershipRole(member) {
   const allowedRoles = parseLeadershipRoles()
-  const memberRoles = member.roles || []
+  const memberRoles = member?.roles || []
+
   return memberRoles.some((roleId) => allowedRoles.includes(roleId))
 }
 
@@ -73,8 +68,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const authHeader = req.headers.authorization || ""
-    const accessToken = authHeader.replace("Bearer ", "").trim()
+    const accessToken = (req.headers.authorization || "")
+      .replace("Bearer ", "")
+      .trim()
 
     if (!accessToken) {
       return res.status(401).json({ error: "Chybí access token." })

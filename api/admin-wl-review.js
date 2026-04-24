@@ -13,19 +13,16 @@ function parseLeadershipRoles() {
 }
 
 function getDiscordUserIdFromSupabaseUser(user) {
-  if (!user) return null
-
-  const meta = user.user_metadata || {}
-  const identities = user.identities || []
-
+  const identities = user?.identities || []
   const discordIdentity = identities.find((i) => i.provider === "discord")
+  const meta = user?.user_metadata || {}
 
   return (
-    meta.provider_id ||
-    meta.sub ||
-    discordIdentity?.id ||
     discordIdentity?.identity_data?.provider_id ||
     discordIdentity?.identity_data?.sub ||
+    discordIdentity?.id ||
+    meta.provider_id ||
+    meta.sub ||
     null
   )
 }
@@ -41,21 +38,18 @@ async function getSupabaseUserFromAccessToken(accessToken) {
 }
 
 async function getGuildMember(discordUserId) {
-  const guildId = process.env.DISCORD_GUILD_ID
-  const botToken = process.env.DISCORD_BOT_TOKEN
-
   const res = await fetch(
-    `https://discord.com/api/guilds/${guildId}/members/${discordUserId}`,
+    `https://discord.com/api/v10/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}`,
     {
       headers: {
-        Authorization: `Bot ${botToken}`,
+        Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`,
       },
     }
   )
 
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`Nepodařilo se načíst Discord membera. ${res.status} ${text}`)
+    throw new Error(`Discord member error ${res.status}: ${text}`)
   }
 
   return await res.json()
@@ -63,47 +57,42 @@ async function getGuildMember(discordUserId) {
 
 function hasLeadershipRole(member) {
   const allowedRoles = parseLeadershipRoles()
-  const memberRoles = member.roles || []
+  const memberRoles = member?.roles || []
+
   return memberRoles.some((roleId) => allowedRoles.includes(roleId))
 }
 
 async function addRole(discordUserId, roleId) {
-  const guildId = process.env.DISCORD_GUILD_ID
-  const botToken = process.env.DISCORD_BOT_TOKEN
-
   const res = await fetch(
-    `https://discord.com/api/guilds/${guildId}/members/${discordUserId}/roles/${roleId}`,
+    `https://discord.com/api/v10/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}/roles/${roleId}`,
     {
       method: "PUT",
       headers: {
-        Authorization: `Bot ${botToken}`,
+        Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`,
       },
     }
   )
 
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`Nepodařilo se přidat roli ${roleId}. ${res.status} ${text}`)
+    throw new Error(`Discord add role error ${res.status}: ${text}`)
   }
 }
 
 async function removeRole(discordUserId, roleId) {
-  const guildId = process.env.DISCORD_GUILD_ID
-  const botToken = process.env.DISCORD_BOT_TOKEN
-
   const res = await fetch(
-    `https://discord.com/api/guilds/${guildId}/members/${discordUserId}/roles/${roleId}`,
+    `https://discord.com/api/v10/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}/roles/${roleId}`,
     {
       method: "DELETE",
       headers: {
-        Authorization: `Bot ${botToken}`,
+        Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`,
       },
     }
   )
 
   if (!res.ok && res.status !== 404) {
     const text = await res.text()
-    throw new Error(`Nepodařilo se odebrat roli ${roleId}. ${res.status} ${text}`)
+    throw new Error(`Discord remove role error ${res.status}: ${text}`)
   }
 }
 
@@ -113,8 +102,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const authHeader = req.headers.authorization || ""
-    const accessToken = authHeader.replace("Bearer ", "").trim()
+    const accessToken = (req.headers.authorization || "")
+      .replace("Bearer ", "")
+      .trim()
 
     if (!accessToken) {
       return res.status(401).json({ error: "Chybí access token." })
@@ -171,25 +161,25 @@ export default async function handler(req, res) {
 
     const { error: updateUserError } = await supabase
       .from("users")
-      .update({
-        wl_status: action,
-      })
-      .eq("discord_id", application.discord_id)
+      .upsert(
+        {
+          discord_id: application.discord_id,
+          wl_status: action,
+        },
+        { onConflict: "discord_id" }
+      )
 
     if (updateUserError) {
       return res.status(500).json({ error: updateUserError.message })
     }
 
     if (action === "approved") {
-      const awaitingRoleId = process.env.DISCORD_AWAITING_ROLE_ID
-      const allowlistRoleId = process.env.DISCORD_ALLOWLIST_ROLE_ID
-
-      if (awaitingRoleId) {
-        await removeRole(application.discord_id, awaitingRoleId)
+      if (process.env.DISCORD_AWAITING_ROLE_ID) {
+        await removeRole(application.discord_id, process.env.DISCORD_AWAITING_ROLE_ID)
       }
 
-      if (allowlistRoleId) {
-        await addRole(application.discord_id, allowlistRoleId)
+      if (process.env.DISCORD_ALLOWLIST_ROLE_ID) {
+        await addRole(application.discord_id, process.env.DISCORD_ALLOWLIST_ROLE_ID)
       }
     }
 
