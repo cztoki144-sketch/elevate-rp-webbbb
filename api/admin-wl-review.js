@@ -79,6 +79,47 @@ async function addRole(discordUserId, roleId) {
   }
 }
 
+async function sendDiscordDM(discordUserId, message) {
+  const botToken = process.env.DISCORD_BOT_TOKEN
+
+  const channelRes = await fetch("https://discord.com/api/v10/users/@me/channels", {
+    method: "POST",
+    headers: {
+      Authorization: `Bot ${botToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      recipient_id: discordUserId,
+    }),
+  })
+
+  if (!channelRes.ok) {
+    const text = await channelRes.text()
+    throw new Error(`Discord DM channel error ${channelRes.status}: ${text}`)
+  }
+
+  const channel = await channelRes.json()
+
+  const msgRes = await fetch(
+    `https://discord.com/api/v10/channels/${channel.id}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bot ${botToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        content: message,
+      }),
+    }
+  )
+
+  if (!msgRes.ok) {
+    const text = await msgRes.text()
+    throw new Error(`Discord DM send error ${msgRes.status}: ${text}`)
+  }
+}
+
 async function removeRole(discordUserId, roleId) {
   const res = await fetch(
     `https://discord.com/api/v10/guilds/${process.env.DISCORD_GUILD_ID}/members/${discordUserId}/roles/${roleId}`,
@@ -182,6 +223,41 @@ export default async function handler(req, res) {
         await addRole(application.discord_id, process.env.DISCORD_ALLOWLIST_ROLE_ID)
       }
     }
+
+    const mention = `<@${application.discord_id}>`
+
+if (action === "approved") {
+  await sendDiscordDM(
+    application.discord_id,
+    `✅ **Gratulujeme k úspěšnému whitelistu!**
+
+Zdravíme, ${mention},
+
+tvůj WL formulář byl **schválen**. Vítej na ElevateRP!
+
+Můžeš se připojit na server a začít hrát.
+
+**Pravidla serveru**
+https://elevate-rp-webbbb-sigma.vercel.app/#`
+  )
+}
+
+if (action === "denied") {
+  await sendDiscordDM(
+    application.discord_id,
+    `❌ **Tvůj formulář byl zamítnut**
+
+Zdravíme, ${mention},
+
+sice to tentokrát nevyšlo, ale určitě jsi do toho dal maximum. Prosím přečti si znovu pravidla a zkus to zítra přibližně v tento čas.
+
+**Důvod zamítnutí**
+${reviewNote || "Důvod nebyl uveden."}
+
+**Pravidla serveru**
+https://elevate-rp-webbbb-sigma.vercel.app/#`
+  )
+}
 
     return res.status(200).json({ success: true })
   } catch (e) {
