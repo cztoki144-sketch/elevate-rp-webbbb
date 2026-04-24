@@ -110,17 +110,15 @@ export default function Whitelist() {
       return
     }
 
-    const { error: userUpsertError } = await supabase
-      .from("users")
-      .upsert(
-        {
-          discord_id: discordId,
-          discord_username: discordUsername,
-          discord_avatar: discordAvatar,
-          wl_status: "pending",
-        },
-        { onConflict: "discord_id" }
-      )
+    const { error: userUpsertError } = await supabase.from("users").upsert(
+      {
+        discord_id: discordId,
+        discord_username: discordUsername,
+        discord_avatar: discordAvatar,
+        wl_status: "pending",
+      },
+      { onConflict: "discord_id" }
+    )
 
     if (userUpsertError) {
       setMessage("Chyba při ukládání uživatele.")
@@ -158,6 +156,20 @@ export default function Whitelist() {
       navigate("/", { replace: true })
     }, 1200)
   }
+
+  const inputClass =
+    "w-full rounded-xl bg-zinc-950/70 border border-white/20 px-4 py-4 text-white placeholder-white/40 outline-none focus:border-red-500 transition"
+
+  const textareaClass = `${inputClass} min-h-[120px] resize-y`
+
+  const Field = ({ label, required = true, children }) => (
+    <div className="space-y-3">
+      <label className="block text-lg font-bold leading-snug">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      {children}
+    </div>
+  )
 
   if (checking) {
     return (
@@ -219,142 +231,166 @@ export default function Whitelist() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white px-4 py-12">
-      <div className="mx-auto max-w-3xl">
-        <h1 className="text-4xl font-bold mb-8">Žádost o WL</h1>
+      <div className="mx-auto max-w-4xl">
+        <div className="rounded-2xl border border-white/10 bg-zinc-900/90 p-8 md:p-10 shadow-2xl">
+          <h1 className="text-4xl font-black mb-10">Žádost o WL</h1>
 
-        {wlStatus === "denied" && (
-          <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            Tvoje předchozí WL žádost byla zamítnuta. Můžeš vyplnit novou.
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            className="w-full rounded-xl bg-slate-900 border border-white/10 px-4 py-3"
-            type="text"
-            name="steam_url"
-            placeholder="Odkaz na Steam profil"
-            value={form.steam_url}
-            onChange={handleChange}
-            required
-          />
-
-          <input
-            className="w-full rounded-xl bg-slate-900 border border-white/10 px-4 py-3"
-            type="text"
-            name="age"
-            placeholder="Kolik ti je let?"
-            value={form.age}
-            onChange={handleChange}
-            required
-          />
-
-          <input
-            className="w-full rounded-xl bg-slate-900 border border-white/10 px-4 py-3"
-            type="text"
-            name="rp_hours"
-            placeholder="Kolik máš nahráno RP hodin?"
-            value={form.rp_hours}
-            onChange={handleChange}
-            required
-          />
-
-          <textarea
-            className="w-full rounded-xl bg-slate-900 border border-white/10 px-4 py-3 min-h-[120px]"
-            name="answer_rp"
-            placeholder="Jak bys vysvětlil svými slovy RP?"
-            value={form.answer_rp}
-            onChange={handleChange}
-            required
-          />
-
-          <textarea
-            className="w-full rounded-xl bg-slate-900 border border-white/10 px-4 py-3 min-h-[120px]"
-            name="answer_ooc_ic"
-            placeholder="Co je OOC a IC?"
-            value={form.answer_ooc_ic}
-            onChange={handleChange}
-            required
-          />
-
-          <textarea
-            className="w-full rounded-xl bg-slate-900 border border-white/10 px-4 py-3 min-h-[120px]"
-            name="answer_me_do"
-            placeholder="Vysvětli /me a /do"
-            value={form.answer_me_do}
-            onChange={handleChange}
-            required
-          />
-
-          <textarea
-            className="w-full rounded-xl bg-slate-900 border border-white/10 px-4 py-3 min-h-[120px]"
-            name="answer_ck"
-            placeholder="Co je CK?"
-            value={form.answer_ck}
-            onChange={handleChange}
-            required
-          />
-
-          <textarea
-            className="w-full rounded-xl bg-slate-900 border border-white/10 px-4 py-3 min-h-[120px]"
-            name="answer_kos"
-            placeholder="Co je KOS?"
-            value={form.answer_kos}
-            onChange={handleChange}
-            required
-          />
-
-          <textarea
-            className="w-full rounded-xl bg-slate-900 border border-white/10 px-4 py-3 min-h-[120px]"
-            name="answer_loot"
-            placeholder="O co všechno tě může zloděj okrást?"
-            value={form.answer_loot}
-            onChange={handleChange}
-            required
-          />
-
-          <textarea
-            className="w-full rounded-xl bg-slate-900 border border-white/10 px-4 py-3 min-h-[140px]"
-            name="scenario_1"
-            placeholder="Scénář 1"
-            value={form.scenario_1}
-            onChange={handleChange}
-            required
-          />
-
-          <textarea
-            className="w-full rounded-xl bg-slate-900 border border-white/10 px-4 py-3 min-h-[140px]"
-            name="scenario_2"
-            placeholder="Scénář 2"
-            value={form.scenario_2}
-            onChange={handleChange}
-            required
-          />
-
-          <input
-            className="w-full rounded-xl bg-slate-900 border border-white/10 px-4 py-3"
-            type="text"
-            name="source_found"
-            placeholder="Jak ses o serveru dozvěděl?"
-            value={form.source_found}
-            onChange={handleChange}
-            required
-          />
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-red-600 hover:bg-red-500 px-4 py-3 font-semibold"
-          >
-            {loading ? "Odesílám..." : "Odeslat žádost"}
-          </button>
-
-          {message && (
-            <div className="rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm">
-              {message}
+          {wlStatus === "denied" && (
+            <div className="mb-8 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              Tvoje předchozí WL žádost byla zamítnuta. Můžeš vyplnit novou.
             </div>
           )}
-        </form>
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <Field label="Odkaz na Steam Profil">
+              <input
+                className={inputClass}
+                type="text"
+                name="steam_url"
+                value={form.steam_url}
+                onChange={handleChange}
+                required
+              />
+            </Field>
+
+            <Field label="Kolik je ti let?">
+              <input
+                className={inputClass}
+                type="text"
+                name="age"
+                value={form.age}
+                onChange={handleChange}
+                required
+              />
+            </Field>
+
+            <Field label="Kolik máš naRPeno hodin (kde jsi už RPil)?">
+              <input
+                className={inputClass}
+                type="text"
+                name="rp_hours"
+                value={form.rp_hours}
+                onChange={handleChange}
+                required
+              />
+            </Field>
+
+            <Field label="Jak by jsi vysvětlil svými slovy RP?">
+              <textarea
+                className={textareaClass}
+                name="answer_rp"
+                value={form.answer_rp}
+                onChange={handleChange}
+                required
+              />
+            </Field>
+
+            <Field label="Co je OOC a IC?">
+              <textarea
+                className={textareaClass}
+                name="answer_ooc_ic"
+                value={form.answer_ooc_ic}
+                onChange={handleChange}
+                required
+              />
+            </Field>
+
+            <Field label="Vysvětli /me a /do">
+              <input
+                className={inputClass}
+                type="text"
+                name="answer_me_do"
+                value={form.answer_me_do}
+                onChange={handleChange}
+                required
+              />
+            </Field>
+
+            <Field label="Pravidlo CK">
+              <input
+                className={inputClass}
+                type="text"
+                name="answer_ck"
+                value={form.answer_ck}
+                onChange={handleChange}
+                required
+              />
+            </Field>
+
+            <Field label="Co je to KOS?">
+              <input
+                className={inputClass}
+                type="text"
+                name="answer_kos"
+                value={form.answer_kos}
+                onChange={handleChange}
+                required
+              />
+            </Field>
+
+            <Field label="O co všechno tě může zloděj okrást?">
+              <input
+                className={inputClass}
+                type="text"
+                name="answer_loot"
+                value={form.answer_loot}
+                onChange={handleChange}
+                required
+              />
+            </Field>
+
+            <Field label="Vytvořím si postavu jménem Pepa Novák. Po spawnu na letišti ukradnu auto a začnou mě nahánět policisté. Já jim uteču a odpojím. Byla nějaká pravidla porušena? Jaká? Zdůvodni:">
+              <textarea
+                className={`${textareaClass} min-h-[140px]`}
+                name="scenario_1"
+                value={form.scenario_1}
+                onChange={handleChange}
+                required
+              />
+            </Field>
+
+            <Field label="Vykradli jste s kamarádem banku, nasedli jste do sporťáku a teď ujíždíte policii. Po cestě nabouráte do stromu, sjedete ze srázu a vyrazíte do hor. Byla nějaká pravidla porušena? Jaká? Vysvětli:">
+              <textarea
+                className={`${textareaClass} min-h-[140px]`}
+                name="scenario_2"
+                value={form.scenario_2}
+                onChange={handleChange}
+                required
+              />
+            </Field>
+
+            <Field label="Jak ses o serveru dozvěděl?">
+              <select
+                className={inputClass}
+                name="source_found"
+                value={form.source_found}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Vyber možnost...</option>
+                <option value="TikTok">TikTok</option>
+                <option value="Discord">Discord</option>
+                <option value="Kamarád">Kamarád</option>
+                <option value="YouTube">YouTube</option>
+                <option value="Jiné">Jiné</option>
+              </select>
+            </Field>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-4 w-full rounded-xl bg-sky-300 hover:bg-sky-200 text-black px-6 py-4 font-black tracking-[0.2em] transition disabled:opacity-50"
+            >
+              {loading ? "ODESÍLÁM..." : "ODESLAT ŽÁDOST"}
+            </button>
+
+            {message && (
+              <div className="rounded-xl border border-white/10 bg-zinc-950/70 px-4 py-3 text-sm">
+                {message}
+              </div>
+            )}
+          </form>
+        </div>
       </div>
     </div>
   )
