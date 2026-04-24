@@ -59,12 +59,22 @@ export default function Whitelist() {
     loadAccess()
   }, [])
 
-  const handleChange = (e) => {
-    setForm((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }))
-  }
+const handleChange = (e) => {
+  const { name, value } = e.target
+
+  setForm((prev) => ({
+    ...prev,
+    [name]: value,
+  }))
+
+  // 🔥 FIX: drží scroll na aktuálním inputu
+  setTimeout(() => {
+    e.target.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    })
+  }, 0)
+}
 
   const handleSubmit = async (e) => {
     e.preventDefault()
