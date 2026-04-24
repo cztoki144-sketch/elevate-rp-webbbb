@@ -89,10 +89,11 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: "Nemáš oprávnění." })
     }
 
-    const { data, error } = await supabase
-      .from("wl_applications")
-      .select("*")
-      .order("created_at", { ascending: false })
+const { data, error } = await supabase
+  .from("wl_applications")
+  .select("*")
+  .eq("status", "pending")
+  .order("created_at", { ascending: false })
 
     if (error) {
       return res.status(500).json({ error: error.message })
